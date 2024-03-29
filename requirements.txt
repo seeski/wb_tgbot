@@ -24,7 +24,6 @@ marshmallow==3.21.1
 multidict==6.0.5
 packaging==24.0
 prompt-toolkit==3.0.43
-psycopg2==2.9.9
 pydantic==2.5.3
 pydantic_core==2.14.6
 python-dateutil==2.9.0.post0
