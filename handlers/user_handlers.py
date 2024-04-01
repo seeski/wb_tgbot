@@ -145,7 +145,7 @@ async def enter_post_name(message: Message, state: FSMContext, *args, **kwargs):
 @main_chat
 async def enter_post_desc(message: Message, state: FSMContext, *args, **kwargs):
     m_len = len(message.text)
-    if m_len < 50 and m_len > 500:
+    if m_len < 50 or m_len > 500:
         await message.answer(text=lexicon_ru['wrong_desc_lenght'].format(m_len))
 
     # elif message.text == 'Отмена':
