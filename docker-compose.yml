@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   db:
     image: mysql
@@ -33,6 +32,7 @@ services:
       - .:/backend
 
     command: [ "redis-server" ]
+WARN[0000] /root/tg_bot/docker-compose.yaml: `version` is obsolete
 
   worker:
     restart: always
