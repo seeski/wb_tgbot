@@ -2,8 +2,8 @@ from celery import Celery
 from services.services import create_periodic_tasks
 
 app = Celery('celery_config',
-             broker='redis://redis:6380',
-             backend='redis://redis:6380',
+             broker='redis://redis:6379',
+             backend='redis://redis:6379',
              include=['celery_config.tasks'])
 
 # Optional configuration, see the application user guide.
