@@ -38,7 +38,6 @@ async def exit_admin_panel(message: Message, *args, **kwargs):
 @router.message(F.text == 'Посты')
 @is_staff
 @main_chat
-
 async def check_posts(message: Message, state: FSMContext, *args, **kwargs):
     post = session.query(Post).filter(Post.allowed == None).first()
     if post:
@@ -55,7 +54,7 @@ async def check_posts(message: Message, state: FSMContext, *args, **kwargs):
 
 
 @router.message(CheckPost.allowed, F.text.in_(['❌', '✅']))
-@cancel_message
+@staff_cancel_message
 @is_staff
 @main_chat
 async def allow_post(message: Message, state: FSMContext, *args, **kwargs):
@@ -106,7 +105,7 @@ async def select_tariff_to_change_price(callback_query: CallbackQuery, state: FS
 
 
 @router.message(TariffPrice.price)
-@cancel_message
+@staff_cancel_message
 async def change_tariff_price(message: Message, state: FSMContext, *args, **kwargs):
     if message.text.isdigit():
         data = await state.get_data()

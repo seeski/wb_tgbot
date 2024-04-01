@@ -6,7 +6,7 @@ from aiogram.types.labeled_price import LabeledPrice
 from services.states import SubInfoForm
 from services.decorators import main_chat, cancel_message
 from lexicon.lexicon_ru import lexicon_ru
-from keyboards.kerboards import tariffs_kb, frequency_kb, rmk, start_kb
+from keyboards.kerboards import tariffs_kb, frequency_kb, rmk, start_kb, cancel_kb
 from config_data.config import TariffInfo
 from environs import Env
 from db.models import session, User, Tariff
@@ -50,7 +50,7 @@ async def define_frequency(message: Message, state: FSMContext, *args, **kwargs)
     if message.text.isdigit() and int(message.text) in TariffInfo.frequency:
         await state.update_data(frequency=int(message.text))
         await state.set_state(SubInfoForm.duration)
-        await message.answer(text='Введите количество дней, в течение которого хотите, чтобы публиковалось ваше объявление', reply_markup=rmk)
+        await message.answer(text='Введите количество дней, в течение которого хотите, чтобы публиковалось ваше объявление', reply_markup=cancel_kb())
 
     # elif message.text == 'Отмена':
     #     await state.clear()

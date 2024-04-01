@@ -2,7 +2,7 @@ from config_data.config import EnvData
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon_ru import lexicon_ru
-from keyboards.kerboards import admin_kb
+from keyboards.kerboards import admin_kb, start_kb
 
 
 
@@ -26,11 +26,23 @@ def cancel_message(func):
         state: FSMContext = kwargs['state']
         if message.text == 'Отмена':
             await state.clear()
-            await message.answer(text=lexicon_ru['home'], reply_markup=admin_kb(user_id=message.from_user.id))
+            await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
         else:
             return await func(*args, **kwargs)
     return wrapper
 
+
+def staff_cancel_message(func):
+    async def wrapper(*args, **kwargs):
+        message: Message = args[0]
+        state: FSMContext = kwargs['state']
+        if message.text == 'Отмена':
+            await state.clear()
+            await message.answer(text=lexicon_ru['home'], reply_markup=admin_kb(user_id=message.from_user.id))
+        else:
+            return await func(*args, **kwargs)
+
+    return wrapper
 
 def is_staff(func):
     async def wrapper(*args, **kwargs):

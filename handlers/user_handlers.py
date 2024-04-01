@@ -38,7 +38,8 @@ async def process_start_command(message: Message, *args, **kwargs):
     else:
         staff = False
 
-    await message.answer(lexicon_ru['user_start'], reply_markup=start_kb(user_id))
+    await message.answer(lexicon_ru['user_start'], reply_markup=rules_info_kb())
+    await message.answer(lexicon_ru['home'], reply_markup=start_kb(user_id))
 
 
 @router.message(F.text == 'Правила')
@@ -164,8 +165,7 @@ async def enter_post_link(message: Message, state: FSMContext, *args, **kwargs):
     # if message.text == 'Отмена':
     #     await state.clear()
     #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
-
-    if validators.url(message.text):
+    if message.text.startswith('@'):
         await state.update_data(link=message.text)
         await state.set_state(PostForm.photo)
         await message.answer(text=lexicon_ru['enter_photo'])

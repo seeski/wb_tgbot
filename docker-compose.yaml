@@ -1,0 +1,57 @@
+version: '3.9'
+services:
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mamochki_v_decrete_root
+      MYSQL_DATABASE: wbozonbot_db
+      MYSQL_USER: tg_bot
+      MYSQL_PASSWORD: mamochki_v_decrete
+    ports:
+      - "3306:3306"
+
+  backend:
+    container_name: backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: 'python main.py'
+    volumes:
+      - .:/backend
+    depends_on:
+      - db
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - '6379:6379'
+
+    volumes:
+      - .:/backend
+
+    command: [ "redis-server" ]
+
+  worker:
+    restart: always
+    build:
+      context: .
+    volumes:
+      - .:/backend
+
+    depends_on:
+      - db
+    command: "celery -A celery_config worker -l info"
+
+  scheduler:
+    restart: always
+    build:
+      context: .
+    volumes:
+      - .:/backend
+
+    depends_on:
+      - db
+    command: "celery -A celery_config beat -l info"

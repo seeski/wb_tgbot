@@ -54,7 +54,7 @@ def tariffs_info_kb():
 def rules_info_kb():
     button = InlineKeyboardButton(
         text='Читать',
-        url='https://telegra.ph/Pravila-razmeshcheniya-03-15'
+        url='https://telegra.ph/Pravila-03-29-64'
     )
     kb = InlineKeyboardBuilder()
     kb.row(*[button])
