@@ -45,17 +45,3 @@ Base.metadata.create_all(bind=engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
-
-t1 = Tariff(name='Кэшбэк 100%', post_price=0)
-t2 = Tariff(name='Кэшбэк', post_price=5)
-t3 = Tariff(name='Товар', post_price=10)
-t4 = Tariff(name='Услуги МП', post_price=50)
-t5 = Tariff(name='Реклама', post_price=500)
-
-session.add(t1)
-session.add(t2)
-session.add(t3)
-session.add(t4)
-session.add(t5)
-
-session.commit()
