@@ -68,22 +68,25 @@ async def define_duration(message: Message, state: FSMContext, *args, **kwargs):
     if message.text.isdigit():
         data = await state.get_data()
         await message.answer(text='Форма на тариф была успешно заполнена')
-        await state.clear()
         tariffs_info = TariffInfo.get_tariffs()
         # если цена за пост != 0, тогда содаем ордер, потому что цена будет > 0
         if data['tariff'] in tariffs_info and tariffs_info.get(data['tariff']):
             tariff_price = TariffInfo.get_tariffs()
             tariff_price = tariff_price[data['tariff']]
             amount = int(data['frequency']) * tariff_price * int(message.text) * 100
-            await message.answer_invoice(
-                title='Оплата тарифа',
-                description=f'Тариф "{data["tariff"]}" на {message.text} дней',
-                payload=f'subscription:{data["tariff"]}:{data["frequency"]}:{message.text}',
-                provider_token=yootoken,
-                currency='RUB',
-                start_parameter='bot',
-                prices=[LabeledPrice(amount=amount, label='руб.')],
-            )
+            if amount < 60 * 100:
+                await message.answer(text='Минимальная сумма на оплату - 60 рублей. Выберите другую частоту и/или продолжительность публикации', reply_markup=frequency_kb())
+                await state.set_state(SubInfoForm.frequency)
+            else:
+                await message.answer_invoice(
+                    title='Оплата тарифа',
+                    description=f'Тариф "{data["tariff"]}" на {message.text} дней',
+                    payload=f'subscription:{data["tariff"]}:{data["frequency"]}:{message.text}',
+                    provider_token=yootoken,
+                    currency='RUB',
+                    start_parameter='bot',
+                    prices=[LabeledPrice(amount=amount, label='руб.')],
+                )
 
         # если цена за пост бесплатная, то не создаем никакой оплаты и просто добавляем тариф во владение к пользователю
         else:

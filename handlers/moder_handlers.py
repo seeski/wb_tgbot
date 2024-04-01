@@ -110,8 +110,7 @@ async def change_tariff_price(message: Message, state: FSMContext, *args, **kwar
     if message.text.isdigit():
         data = await state.get_data()
         tariff_data = data.get('tariff_data')
-        tariff = session.query(Tariff).filter(Tariff.name == tariff_data.split(':')[1]).first()
-        tariff.post_price = int(message.text)
+        tariff = session.query(Tariff).filter(Tariff.name == tariff_data.split(':')[1]).update({'post_price': int(message.text)})
         session.commit()
         await state.clear()
         await message.answer(text='Цена успешна изменена', reply_markup=admin_kb(user_id=message.from_user.id))

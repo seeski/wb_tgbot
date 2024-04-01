@@ -119,7 +119,7 @@ async def create_post(callback: CallbackQuery, state: FSMContext, *args, **kwarg
     await state.set_state(PostForm.tariff_data)
     await state.update_data(tariff_data=callback.data)
     await state.set_state(PostForm.name)
-    await callback.message.answer(text=lexicon_ru['enter_header'])
+    await callback.message.answer(text=lexicon_ru['enter_header'], reply_markup=cancel_kb())
 
 
 @router.message(PostForm.name)
@@ -146,7 +146,7 @@ async def enter_post_name(message: Message, state: FSMContext, *args, **kwargs):
 async def enter_post_desc(message: Message, state: FSMContext, *args, **kwargs):
     m_len = len(message.text)
     if m_len < 50 or m_len > 500:
-        await message.answer(text=lexicon_ru['wrong_desc_lenght'].format(m_len))
+        await message.answer(text=lexicon_ru['wrong_desc_len'].format(m_len))
 
     # elif message.text == 'Отмена':
     #     await state.clear()
@@ -177,26 +177,28 @@ async def enter_post_link(message: Message, state: FSMContext, *args, **kwargs):
 @cancel_message
 @main_chat
 async def enter_post_photo(message: Message, state: FSMContext, *args, **kwargs):
-    # if message.text == 'Отмена':
-    #     await state.clear()
-    #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
+    try:
+        # if message.text == 'Отмена':
+        #     await state.clear()
+        #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
 
-    if message.photo:
-        photo_id = message.photo[-1].file_id
-        await state.update_data(photo=photo_id)
-        await state.set_state(PostForm.confirmation)
-        data = await state.get_data()
-        print(data)
-        await message.answer_photo(
-            photo=data['photo'],
-            caption=lexicon_ru['post_template'].format(data['name'], data['desc'], data['link'])
-        )
-        tariff_callback = data['tariff_data'].split(":")
-        await message.answer(lexicon_ru['post_demo'].format(
-            tariff_callback[1], tariff_callback[2], tariff_callback[3]
-        ), reply_markup=continue_kb())
-    else:
-        await message.answer('Для создания поста обязательно использование фото. Пожалуйста, отправьте мне фотографию')
+        if message.photo:
+            photo_id = message.photo[-1].file_id
+            await state.update_data(photo=photo_id)
+            await state.set_state(PostForm.confirmation)
+            data = await state.get_data()
+            await message.answer_photo(
+                photo=data['photo'],
+                caption=lexicon_ru['post_template'].format(data['name'], data['desc'], data['link'])
+            )
+            tariff_callback = data['tariff_data'].split(":")
+            await message.answer(lexicon_ru['post_demo'].format(
+                tariff_callback[1], tariff_callback[2], tariff_callback[3]
+            ), reply_markup=continue_kb())
+        else:
+            await message.answer('Для создания поста обязательно использование фото. Пожалуйста, отправьте мне фотографию')
+    except Exception as e:
+        await message.answer(text='Возникла ошибка во время обработки фото, повторите попытку или напишите в поддержку', reply_markup=cancel_kb())
 
 @router.message(PostForm.confirmation)
 @cancel_message
