@@ -177,28 +177,27 @@ async def enter_post_link(message: Message, state: FSMContext, *args, **kwargs):
 @cancel_message
 @main_chat
 async def enter_post_photo(message: Message, state: FSMContext, *args, **kwargs):
-    try:
-        # if message.text == 'Отмена':
-        #     await state.clear()
-        #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
+    # if message.text == 'Отмена':
+    #     await state.clear()
+    #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
 
-        if message.photo:
-            photo_id = message.photo[-1].file_id
-            await state.update_data(photo=photo_id)
-            await state.set_state(PostForm.confirmation)
-            data = await state.get_data()
-            await message.answer_photo(
-                photo=data['photo'],
-                caption=lexicon_ru['post_template'].format(data['name'], data['desc'], data['link'])
-            )
-            tariff_callback = data['tariff_data'].split(":")
-            await message.answer(lexicon_ru['post_demo'].format(
-                tariff_callback[1], tariff_callback[2], tariff_callback[3]
-            ), reply_markup=continue_kb())
-        else:
-            await message.answer('Для создания поста обязательно использование фото. Пожалуйста, отправьте мне фотографию')
-    except Exception as e:
-        await message.answer(text='Возникла ошибка во время обработки фото, повторите попытку или напишите в поддержку', reply_markup=cancel_kb())
+    if message.photo:
+        photo_id = message.photo[-1].file_id
+        await state.update_data(photo=photo_id)
+        await state.set_state(PostForm.confirmation)
+        data = await state.get_data()
+        await message.answer(text=json.dumps(data))
+        await message.answer_photo(
+            photo=data['photo'],
+            caption=lexicon_ru['post_template'].format(data['name'], data['desc'], data['link'])
+        )
+        tariff_callback = data['tariff_data'].split(":")
+        await message.answer(lexicon_ru['post_demo'].format(
+            tariff_callback[1], tariff_callback[2], tariff_callback[3]
+        ), reply_markup=continue_kb())
+    else:
+        await message.answer('Для создания поста обязательно использование фото. Пожалуйста, отправьте мне фотографию')
+
 
 @router.message(PostForm.confirmation)
 @cancel_message

@@ -74,10 +74,25 @@ async def define_duration(message: Message, state: FSMContext, *args, **kwargs):
             tariff_price = TariffInfo.get_tariffs()
             tariff_price = tariff_price[data['tariff']]
             amount = int(data['frequency']) * tariff_price * int(message.text) * 100
+            quantity = amount / 100 / tariff_price
             if amount < 60 * 100:
                 await message.answer(text='Минимальная сумма на оплату - 60 рублей. Выберите другую частоту и/или продолжительность публикации', reply_markup=frequency_kb())
                 await state.set_state(SubInfoForm.frequency)
             else:
+                provider_data = {
+                    'receipt': {
+                        'items': [{
+                            'description': f'пост по тарифу "{data["tariff"]}"',
+                            'quantity': 1,
+                            'amount': {
+                                'value': amount / 100,
+                                'currency': 'RUB'
+                            },
+                            'vat_code': 1
+                        }],
+                        'email': 'Ch1gra@yandex.ru'
+                    }
+                }
                 await message.answer_invoice(
                     title='Оплата тарифа',
                     description=f'Тариф "{data["tariff"]}" на {message.text} дней',
@@ -86,6 +101,9 @@ async def define_duration(message: Message, state: FSMContext, *args, **kwargs):
                     currency='RUB',
                     start_parameter='bot',
                     prices=[LabeledPrice(amount=amount, label='руб.')],
+                    need_email=True,
+                    send_email_to_provider=True,
+                    provider_data=json.dumps(provider_data)
                 )
 
         # если цена за пост бесплатная, то не создаем никакой оплаты и просто добавляем тариф во владение к пользователю

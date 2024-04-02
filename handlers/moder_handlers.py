@@ -116,3 +116,21 @@ async def change_tariff_price(message: Message, state: FSMContext, *args, **kwar
         await message.answer(text='Цена успешна изменена', reply_markup=admin_kb(user_id=message.from_user.id))
     else:
         await message.answer(text='Цена введена некоректно. Повторите попытку или нажмите на кнопку "Отмена"', reply_markup=cancel_kb())
+
+@router.message(F.text == 'инициализровать 5 новых тарифов')
+@is_owner
+async def intialize_tariffs(message: Message, *args, **kwargs):
+    t1 = Tariff(name='Кэшбэк 100%', post_price=0)
+    t2 = Tariff(name='Кэшбэк', post_price=5)
+    t3 = Tariff(name='Товар', post_price=10)
+    t4 = Tariff(name='Услуги МП', post_price=50)
+    t5 = Tariff(name='Реклама', post_price=500)
+
+    session.add(t1)
+    session.add(t2)
+    session.add(t3)
+    session.add(t4)
+    session.add(t5)
+
+    session.commit()
+    await message.answer(text='Успешно', reply_markup=start_kb(user_id=message.from_user.id))
