@@ -14,17 +14,25 @@ def hello_world():
 
 
 async def public_posts(times_a_day: int):
-    posts = session.query(Post).filter(Post.frequency == times_a_day, Post.allowed == True)
-    for post in posts:
-        post_text = lexicon_ru['post_template'].format(post.header, post.desc, post.link)
-        await bot.send_photo(
-            chat_id=EnvData.main_chats[0],
-            caption=post_text,
-            photo=post.photo_id
-            )
-        await asyncio.sleep(1)
-
+    try:
+        posts = session.query(Post).filter(Post.frequency == times_a_day, Post.allowed == True, Post.amount != 0).all()
+        for post in posts:
+            post_text = lexicon_ru['post_template'].format(post.header, post.desc, post.link)
+            await bot.send_photo(
+                chat_id=str(EnvData.main_chats[0]),
+                caption=post_text,
+                photo=post.photo_id
+                )
+            post.amount -= 1
+            await asyncio.sleep(1)
+        # session.query(Post).filter(Post.frequency == times_a_day, Post.allowed == True, Post.amount != 0).update({'amount': Post.amount - 1})
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
 
 @app.shared_task
 def public_posts_task(times_a_day: int):
-    async_to_sync(public_posts)(times_a_day)
+    asyncio.get_event_loop().run_until_complete(public_posts(times_a_day))

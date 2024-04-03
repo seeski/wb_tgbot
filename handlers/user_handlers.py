@@ -186,7 +186,6 @@ async def enter_post_photo(message: Message, state: FSMContext, *args, **kwargs)
         await state.update_data(photo=photo_id)
         await state.set_state(PostForm.confirmation)
         data = await state.get_data()
-        await message.answer(text=json.dumps(data))
         await message.answer_photo(
             photo=data['photo'],
             caption=lexicon_ru['post_template'].format(data['name'], data['desc'], data['link'])
