@@ -19,11 +19,16 @@ class TariffInfo:
 
     @classmethod
     def get_tariffs(self) -> dict:
-        queryset = session.query(Tariff).all()
-        tariffs = {
-            tariff.name: tariff.post_price for tariff in queryset
-        }
-        return tariffs
+        try:
+            queryset = session.query(Tariff).all()
+            tariffs = {
+                tariff.name: tariff.post_price for tariff in queryset
+            }
+            return tariffs
+        except Exception as e:
+            session.rollback()
+        finally:
+            session.close()
 
 
 

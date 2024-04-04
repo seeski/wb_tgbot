@@ -24,22 +24,28 @@ moders = json.loads(env('MODER_ID'))
 @router.message(CommandStart())
 @main_chat
 async def process_start_command(message: Message, *args, **kwargs):
+    try:
+        user_id = message.from_user.id
+        user_exist = session.query(User).filter(User.tg_id == user_id).first()
+        if not user_exist:
+            print('создание нового пользователя')
+            new_user = User(tg_id=message.from_user.id, tariffs_data=json.dumps([]))
+            session.add(new_user)
+            session.commit()
 
-    user_id = message.from_user.id
-    user_exist = session.query(User).filter(User.tg_id == user_id).first()
-    if not user_exist:
-        print('создание нового пользователя')
-        new_user = User(tg_id=message.from_user.id, tariffs_data=json.dumps([]))
-        session.add(new_user)
-        session.commit()
+        if user_id in owners or user_id in moders:
+            staff = True
+        else:
+            staff = False
 
-    if user_id in owners or user_id in moders:
-        staff = True
-    else:
-        staff = False
+        await message.answer(lexicon_ru['user_start'], reply_markup=rules_info_kb())
+        await message.answer(lexicon_ru['home'], reply_markup=start_kb(user_id))
+    except Exception as e:
+        session.rollback()
+        await message.answer(text='произошла ошибка в функции process_start_command')
 
-    await message.answer(lexicon_ru['user_start'], reply_markup=rules_info_kb())
-    await message.answer(lexicon_ru['home'], reply_markup=start_kb(user_id))
+    finally:
+        session.close()
 
 
 @router.message(F.text == 'Правила')
@@ -58,35 +64,26 @@ async def home(message: Message, *args, **kwargs):
 @router.message(F.text == 'Мои тарифы')
 @main_chat
 async def my_tariffs(message: Message, *args, **kwargs):
-    text = lexicon_ru['my_tariffs']
-    user = session.query(User).filter(User.tg_id == message.from_user.id).first()
-    tariffs_data = json.loads(user.tariffs_data)
-    if not tariffs_data:
-        text += lexicon_ru['has_no_tariffs']
-        await message.answer(text=text, reply_markup=start_kb(user_id=message.from_user.id))
-    else:
-        for tariff_data in tariffs_data:
-            text += lexicon_ru['my_tariff_template'].format(
-                tariff_data['name'], tariff_data['duration'], tariff_data['frequency']
-            )
+    try:
+        text = lexicon_ru['my_tariffs']
+        user = session.query(User).filter(User.tg_id == message.from_user.id).first()
+        tariffs_data = json.loads(user.tariffs_data)
+        if not tariffs_data:
+            text += lexicon_ru['has_no_tariffs']
+            await message.answer(text=text, reply_markup=start_kb(user_id=message.from_user.id))
+        else:
+            for tariff_data in tariffs_data:
+                text += lexicon_ru['my_tariff_template'].format(
+                    tariff_data['name'], tariff_data['duration'], tariff_data['frequency']
+                )
 
-        kb = my_tariffs_kb(tariffs_data)
-        await message.answer(text=text, reply_markup=kb)
-    # await message.answer(text=text)
-    # await message.answer(text=lexicon_ru['home'], reply_markup=start_kb())
-
-
-# @router.message(F.text.in_([f'Тариф {i}' for i in range(1, 6)]))
-# async def tariff_detail(message: Message, *args, **kwargs):
-#     await message.answer_invoice(
-#         title='Оплата тарифа',
-#         description=f'Тариф "{message.text}" на x дней',
-#         payload='subscription',
-#         provider_token=yootoken,
-#         currency='RUB',
-#         start_parameter='bot',
-#         prices=[LabeledPrice(amount=15000, label='руб.')]
-#     )
+            kb = my_tariffs_kb(tariffs_data)
+            await message.answer(text=text, reply_markup=kb)
+    except Exception as e:
+        session.rollback()
+        await message.answer(text="произошла ошибка в функции my_tariffs")
+    finally:
+        session.close()
 
 
 @router.pre_checkout_query()
@@ -98,19 +95,25 @@ async def pre_checkout(pre_checkout_query: PreCheckoutQuery, *args, **kwargs):
 @router.message(F.successful_payment)
 @main_chat
 async def successful_payment(message: Message, *args, **kwargs):
-    if 'subscription' in message.successful_payment.invoice_payload:
-        user = session.query(User).filter(User.tg_id == message.from_user.id).first()
-        tariffs_data = json.loads(user.tariffs_data)
-        payload = message.successful_payment.invoice_payload.split(':')
-        new_tariff_data = {
-            'name': payload[1],
-            'frequency': int(payload[2]),
-            'duration': int(payload[3])
-        }
-        tariffs_data.append(new_tariff_data)
-        user.tariffs_data = json.dumps(tariffs_data)
-        session.commit()
-    await message.answer(text='Оплата прошла успешно', reply_markup=start_kb(user_id=message.from_user.id))
+    try:
+        if 'subscription' in message.successful_payment.invoice_payload:
+            user = session.query(User).filter(User.tg_id == message.from_user.id).first()
+            tariffs_data = json.loads(user.tariffs_data)
+            payload = message.successful_payment.invoice_payload.split(':')
+            new_tariff_data = {
+                'name': payload[1],
+                'frequency': int(payload[2]),
+                'duration': int(payload[3])
+            }
+            tariffs_data.append(new_tariff_data)
+            user.tariffs_data = json.dumps(tariffs_data)
+            session.commit()
+        await message.answer(text='Оплата прошла успешно', reply_markup=start_kb(user_id=message.from_user.id))
+    except Exception as e:
+        session.rollback()
+        await message.answer(text='Произошла ошибка в функции successful_payment')
+    finally:
+        session.close()
 
 
 @router.callback_query(HasTariffCallbackFactory.filter())
@@ -168,9 +171,7 @@ async def enter_post_desc(message: Message, state: FSMContext, *args, **kwargs):
 @cancel_message
 @main_chat
 async def enter_post_link(message: Message, state: FSMContext, *args, **kwargs):
-    # if message.text == 'Отмена':
-    #     await state.clear()
-    #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
+
     if message.text and message.text.startswith('@'):
         await state.update_data(link=message.text)
         await state.set_state(PostForm.photo)
@@ -208,40 +209,40 @@ async def enter_post_photo(message: Message, state: FSMContext, *args, **kwargs)
 @cancel_message
 @main_chat
 async def confirm_post(message: Message, state: FSMContext, *args, **kwargs):
-    # if message.text == 'Отмена':
-    #     await state.clear()
-    #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
+    try:
+        if message.text == 'Продолжить':
+            data = await state.get_data()
+            # убираем выбранный пользователем тариф из всех доступных пользователю
+            tariff_data = data['tariff_data'].split(':')
+            tariff = {
+                'name': tariff_data[1],
+                'frequency': int(tariff_data[2]),
+                'duration': int(tariff_data[3])
+            }
+            user = session.query(User).filter(User.tg_id == message.from_user.id).first()
+            user_tariffs: list = json.loads(user.tariffs_data)
+            user_tariffs.remove(tariff)
+            user.tariffs_data = json.dumps(user_tariffs)
 
-    if message.text == 'Продолжить':
-
-        data = await state.get_data()
-
-        # убираем выбранный пользователем тариф из всех доступных пользователю
-        tariff_data = data['tariff_data'].split(':')
-        tariff = {
-            'name': tariff_data[1],
-            'frequency': int(tariff_data[2]),
-            'duration': int(tariff_data[3])
-        }
-        user = session.query(User).filter(User.tg_id == message.from_user.id).first()
-        user_tariffs: list = json.loads(user.tariffs_data)
-        user_tariffs.remove(tariff)
-        user.tariffs_data = json.dumps(user_tariffs)
-
-        post = Post(
-            header=data['name'],
-            desc=data['desc'],
-            link=data['link'],
-            photo_id=data['photo'],
-            user=message.from_user.id,
-            tariff_name=tariff['name'],
-            frequency=tariff['frequency'],
-            duration=tariff['duration'],
-            amount=tariff['frequency'] * tariff['duration']
-        )
-        session.add(post)
-        session.commit()
-        await state.clear()
-        await message.answer(text=lexicon_ru['post_successfully_created'], reply_markup=start_kb(user_id=message.from_user.id))
-    else:
-        await message.answer(text=lexicon_ru['wrong_confirmation_entered'])
+            post = Post(
+                header=data['name'],
+                desc=data['desc'],
+                link=data['link'],
+                photo_id=data['photo'],
+                user=message.from_user.id,
+                tariff_name=tariff['name'],
+                frequency=tariff['frequency'],
+                duration=tariff['duration'],
+                amount=tariff['frequency'] * tariff['duration']
+            )
+            session.add(post)
+            session.commit()
+            await state.clear()
+            await message.answer(text=lexicon_ru['post_successfully_created'], reply_markup=start_kb(user_id=message.from_user.id))
+        else:
+            await message.answer(text=lexicon_ru['wrong_confirmation_entered'])
+    except Exception as e:
+        session.rollback()
+        await message.answer(text="произошла ошибка в функции confirm_post")
+    finally:
+        session.close()

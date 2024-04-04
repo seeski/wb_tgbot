@@ -58,33 +58,39 @@ async def check_posts(message: Message, state: FSMContext, *args, **kwargs):
 @is_staff
 @main_chat
 async def allow_post(message: Message, state: FSMContext, *args, **kwargs):
-    if message.text == '✅' or message.text == '❌':
-        data = await state.get_data()
-        await state.clear()
-        post_id = data['post_id']
-        post = session.query(Post).filter(Post.id == post_id).first()
-        if message.text == '✅':
-            post.allowed = True
-        else:
-            post.allowed = False
-        session.commit()
-        new_post_to_allow = session.query(Post).filter(Post.allowed == None).order_by(Post.id).first()
-        if new_post_to_allow:
-            await state.set_state(CheckPost.post_id)
-            await state.update_data(post_id=new_post_to_allow.id)
-            await state.set_state(CheckPost.allowed)
+    try:
+        if message.text == '✅' or message.text == '❌':
+            data = await state.get_data()
+            await state.clear()
+            post_id = data['post_id']
+            post = session.query(Post).filter(Post.id == post_id).first()
+            if message.text == '✅':
+                post.allowed = True
+            else:
+                post.allowed = False
+            session.commit()
+            new_post_to_allow = session.query(Post).filter(Post.allowed == None).order_by(Post.id).first()
+            if new_post_to_allow:
+                await state.set_state(CheckPost.post_id)
+                await state.update_data(post_id=new_post_to_allow.id)
+                await state.set_state(CheckPost.allowed)
 
-            await message.answer_photo(
-                photo=new_post_to_allow.photo_id,
-                caption=lexicon_ru['post_template'].format(new_post_to_allow.header, new_post_to_allow.desc,
-                                                           new_post_to_allow.link) + f'\n\nтариф "{new_post_to_allow.tariff_name}',
-                reply_markup=check_post_kb()
-            )
-        else:
-            await message.answer(lexicon_ru['no_posts_to_check'], reply_markup=start_kb(user_id=message.from_user.id))
+                await message.answer_photo(
+                    photo=new_post_to_allow.photo_id,
+                    caption=lexicon_ru['post_template'].format(new_post_to_allow.header, new_post_to_allow.desc,
+                                                               new_post_to_allow.link) + f'\n\nтариф "{new_post_to_allow.tariff_name}',
+                    reply_markup=check_post_kb()
+                )
+            else:
+                await message.answer(lexicon_ru['no_posts_to_check'], reply_markup=start_kb(user_id=message.from_user.id))
 
-    else:
-        await message.answer(text='Нет такой команды. Нажмите на одну из кнопок', reply_markup=check_post_kb())
+        else:
+            await message.answer(text='Нет такой команды. Нажмите на одну из кнопок', reply_markup=check_post_kb())
+    except Exception as e:
+        session.rollback()
+        await message.answer(text='произошла ошибка в функции allow_post')
+    finally:
+        session.close()
 
 
 @router.message(F.text == 'Цены на тарифы')
@@ -107,15 +113,21 @@ async def select_tariff_to_change_price(callback_query: CallbackQuery, state: FS
 @router.message(TariffPrice.price)
 @staff_cancel_message
 async def change_tariff_price(message: Message, state: FSMContext, *args, **kwargs):
-    if message.text.isdigit():
-        data = await state.get_data()
-        tariff_data = data.get('tariff_data')
-        tariff = session.query(Tariff).filter(Tariff.name == tariff_data.split(':')[1]).update({'post_price': int(message.text)})
-        session.commit()
-        await state.clear()
-        await message.answer(text='Цена успешна изменена', reply_markup=admin_kb(user_id=message.from_user.id))
-    else:
-        await message.answer(text='Цена введена некоректно. Повторите попытку или нажмите на кнопку "Отмена"', reply_markup=cancel_kb())
+    try:
+        if message.text.isdigit():
+            data = await state.get_data()
+            tariff_data = data.get('tariff_data')
+            tariff = session.query(Tariff).filter(Tariff.name == tariff_data.split(':')[1]).update({'post_price': int(message.text)})
+            session.commit()
+            await state.clear()
+            await message.answer(text='Цена успешна изменена', reply_markup=admin_kb(user_id=message.from_user.id))
+        else:
+            await message.answer(text='Цена введена некоректно. Повторите попытку или нажмите на кнопку "Отмена"', reply_markup=cancel_kb())
+    except Exception as e:
+        session.rollback()
+        await message.answer(text="произошла ошибка в функции change_tariff_price")
+    finally:
+        session.close()
 
 @router.message(F.text == 'инициализровать 5 новых тарифов')
 @is_owner
