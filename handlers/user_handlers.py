@@ -126,36 +126,42 @@ async def create_post(callback: CallbackQuery, state: FSMContext, *args, **kwarg
 @cancel_message
 @main_chat
 async def enter_post_name(message: Message, state: FSMContext, *args, **kwargs):
-    if len(message.text) <= 3 or len(message.text) > 50:
-        await message.answer('Количество символов не соответствует правилам, попробуйте еще раз')
+    try:
+        if len(message.text) <= 3 or len(message.text) > 50:
+            await message.answer('Количество символов не соответствует правилам, попробуйте еще раз')
 
-    # elif message.text == 'Отмена':
-    #     await state.clear()
-    #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
+        # elif message.text == 'Отмена':
+        #     await state.clear()
+        #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
 
-    else:
-        await state.update_data(name=message.text)
-        await state.set_state(PostForm.desc)
-        await message.answer(
-            'Отлично! Теперь введите описание для вашего поста. Ограничение по символам - не менее 50 и не более 500')
+        else:
+            await state.update_data(name=message.text)
+            await state.set_state(PostForm.desc)
+            await message.answer(
+                'Отлично! Теперь введите описание для вашего поста. Ограничение по символам - не менее 50 и не более 500')
+    except Exception as e:
+        await message.answer(text="Данные введены некоректно, повторите попытку")
 
 
 @router.message(PostForm.desc)
 @cancel_message
 @main_chat
 async def enter_post_desc(message: Message, state: FSMContext, *args, **kwargs):
-    m_len = len(message.text)
-    if m_len < 50 or m_len > 500:
-        await message.answer(text=lexicon_ru['wrong_desc_len'].format(m_len))
+    if message.text:
+        m_len = len(message.text)
+        if m_len < 50 or m_len > 500:
+            await message.answer(text=lexicon_ru['wrong_desc_len'].format(m_len))
 
     # elif message.text == 'Отмена':
     #     await state.clear()
     #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
 
+        else:
+            await state.update_data(desc=message.text)
+            await state.set_state(PostForm.link)
+            await message.answer(text=lexicon_ru['enter_link'])
     else:
-        await state.update_data(desc=message.text)
-        await state.set_state(PostForm.link)
-        await message.answer(text=lexicon_ru['enter_link'])
+        await message.answer(text="Данные введены некоректно, попробуйте еще раз")
 
 
 @router.message(PostForm.link)
@@ -165,7 +171,7 @@ async def enter_post_link(message: Message, state: FSMContext, *args, **kwargs):
     # if message.text == 'Отмена':
     #     await state.clear()
     #     await message.answer(text=lexicon_ru['home'], reply_markup=start_kb(user_id=message.from_user.id))
-    if message.text.startswith('@'):
+    if message.text and message.text.startswith('@'):
         await state.update_data(link=message.text)
         await state.set_state(PostForm.photo)
         await message.answer(text=lexicon_ru['enter_photo'])
