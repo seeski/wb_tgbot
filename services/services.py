@@ -6,7 +6,7 @@ def create_periodic_tasks() -> dict:
     for fr in TariffInfo.frequency:
         tasks[f'post_every_{24/fr}_hours'] = {
             'task': 'celery_config.tasks.public_posts_task',
-            'schedule': crontab(minute=0, hour=f'*/{24/fr}'),
+            'schedule': crontab(minute='*/2', hour=f'*/{24/fr}'),
             'args': [fr]
         }
     return tasks

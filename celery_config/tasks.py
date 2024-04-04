@@ -24,7 +24,7 @@ async def public_posts(times_a_day: int):
                 photo=post.photo_id
                 )
             post.amount -= 1
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
         # session.query(Post).filter(Post.frequency == times_a_day, Post.allowed == True, Post.amount != 0).update({'amount': Post.amount - 1})
         session.commit()
     except Exception as e:
