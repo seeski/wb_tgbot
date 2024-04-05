@@ -42,7 +42,7 @@ async def process_start_command(message: Message, *args, **kwargs):
         await message.answer(lexicon_ru['home'], reply_markup=start_kb(user_id))
     except Exception as e:
         session.rollback()
-        await message.answer(text=f'произошла ошибка в функции process_start_command {e.__name__} {e}')
+        await message.answer(text=f'произошла ошибка в функции process_start_command {Exception.__name__}\n\n{e}')
 
     finally:
         session.close()
