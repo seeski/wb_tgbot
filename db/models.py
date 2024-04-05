@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    create_engine, Integer, String, Column, ForeignKey, Boolean, Date
+    create_engine, Integer, String, Column, ForeignKey, Boolean, Date, BigInteger
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -20,7 +20,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
-    tg_id = Column('tg_id', Integer, unique=True)
+    tg_id = Column('tg_id', BigInteger, unique=True)
     tariffs_data = Column('tariffs_data', String(1000))
 
 
