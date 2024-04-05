@@ -32,7 +32,7 @@ class Post(Base):
     desc = Column('desc', String(500))
     link = Column('link', String(500))
     photo_id = Column('photo_id', String(500))
-    user = Column('user', Integer)
+    user = Column('user', BigInteger)
     allowed = Column('allowed', Boolean, nullable=True, default=None)
     tariff_name = Column('tariff_name', String(50))
     frequency = Column('frequency', Integer)
