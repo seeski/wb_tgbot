@@ -42,7 +42,7 @@ async def process_start_command(message: Message, *args, **kwargs):
         await message.answer(lexicon_ru['home'], reply_markup=start_kb(user_id))
     except Exception as e:
         session.rollback()
-        await message.answer(text=f'произошла ошибка в функции process_start_command {Exception.__name__}\n\n{e}')
+        await message.answer(text=f'произошла ошибка в функции process_start_command\n\n{e}')
 
     finally:
         session.close()
@@ -81,7 +81,7 @@ async def my_tariffs(message: Message, *args, **kwargs):
             await message.answer(text=text, reply_markup=kb)
     except Exception as e:
         session.rollback()
-        await message.answer(text="произошла ошибка в функции my_tariffs")
+        await message.answer(text=f"произошла ошибка в функции my_tariffs \n\n{e}")
     finally:
         session.close()
 
@@ -111,7 +111,7 @@ async def successful_payment(message: Message, *args, **kwargs):
         await message.answer(text='Оплата прошла успешно', reply_markup=start_kb(user_id=message.from_user.id))
     except Exception as e:
         session.rollback()
-        await message.answer(text='Произошла ошибка в функции successful_payment')
+        await message.answer(text=f'Произошла ошибка в функции successful_payment\n\n{e}')
     finally:
         session.close()
 
@@ -243,6 +243,6 @@ async def confirm_post(message: Message, state: FSMContext, *args, **kwargs):
             await message.answer(text=lexicon_ru['wrong_confirmation_entered'])
     except Exception as e:
         session.rollback()
-        await message.answer(text="произошла ошибка в функции confirm_post")
+        await message.answer(text=f"произошла ошибка в функции confirm_post\n\n{e}")
     finally:
         session.close()

@@ -88,7 +88,7 @@ async def allow_post(message: Message, state: FSMContext, *args, **kwargs):
             await message.answer(text='Нет такой команды. Нажмите на одну из кнопок', reply_markup=check_post_kb())
     except Exception as e:
         session.rollback()
-        await message.answer(text='произошла ошибка в функции allow_post')
+        await message.answer(text=f'произошла ошибка в функции allow_post\n\n{e}')
     finally:
         session.close()
 
@@ -125,7 +125,7 @@ async def change_tariff_price(message: Message, state: FSMContext, *args, **kwar
             await message.answer(text='Цена введена некоректно. Повторите попытку или нажмите на кнопку "Отмена"', reply_markup=cancel_kb())
     except Exception as e:
         session.rollback()
-        await message.answer(text="произошла ошибка в функции change_tariff_price")
+        await message.answer(text=f"произошла ошибка в функции change_tariff_price\n\n{e}")
     finally:
         session.close()
 
